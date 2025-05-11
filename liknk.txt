@@ -2,3 +2,8 @@ mongodb+srv://UtkarshaSemantic9@admin:UtkarshaSemantic9@customer-feedbacks.172va
 
 
 mongodb+srv://<db_username>:<db_password>@customer-feedbacks.172va.mongodb.net/?retryWrites=true&w=majority&appName=Customer-Feedbacks
+
+
+
+Federation uri
+mongodb://UtkarshaSemantic9:UtkarshaSemantic9@federateddatabaseinstance0-172va.a.query.mongodb.net/?ssl=true&authSource=admin&appName=FederatedDatabaseInstance0
