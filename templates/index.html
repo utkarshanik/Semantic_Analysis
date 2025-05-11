@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product Review Analyzer</title>
+</head>
+<body>
+    <h1>Enter Product Review</h1>
+    <form method="POST">
+        <textarea name="review" rows="6" cols="60" placeholder="Type your review here...">{{ user_text }}</textarea><br><br>
+        <input type="submit" value="Analyze">
+    </form>
+
+    {% if overall %}
+        <h2>🔍 Overall Sentiment</h2>
+        <p>{{ overall.label }} (Confidence: {{ overall.score | round(2) }})</p>
+
+        <h3>✔️ Positive Aspects:</h3>
+        <ul>
+            {% for aspect in positives %}
+                <li>{{ aspect }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>❌ Negative Aspects:</h3>
+        <ul>
+            {% for aspect in negatives %}
+                <li>{{ aspect }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>

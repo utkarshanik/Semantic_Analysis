@@ -1,79 +1,78 @@
+from flask import Flask, request, render_template
 from transformers import pipeline
 import yake
 import nltk
 nltk.download('punkt')
 from nltk.tokenize import sent_tokenize
+import pymongo
+from pymongo import MongoClient
 
-# Load sentiment pipeline (Hugging Face model)
+app = Flask(__name__)
+
+# MongoDB connection using the provided connection string
+client = MongoClient("mongodb+srv://UtkarshaSemantic9:UtkarshaSemantic9@customer-feedbacks.172va.mongodb.net/?retryWrites=true&w=majority&appName=Customer-Feedbacks")
+db = client["sentiment_analysis_db"]  # Choose a DB name, you can use an existing one or create a new one
+reviews_collection = db["reviews"]  # Choose a collection name, you can create a new one
+
+# Load sentiment pipeline
 sentiment_pipeline = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
 
-# Input product review
-text = "Works as expected. The build quality is decent, and it performs well for everyday use. Charging is fast and battery life is acceptable. Overall, a good value for the price"
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    positive_aspects = []
+    negative_aspects = []
+    overall_result = {}
+    user_text = ""
 
-# Step 1: Overall sentiment analysis
-overall_result = sentiment_pipeline(text)[0]
-print(f"\n🔍 Overall Sentiment: {overall_result['label']} (Confidence: {overall_result['score']:.2f})\n")
+    if request.method == 'POST':
+        user_text = request.form['review']
 
-# Step 2: Aspect Extraction + Sentence Sentiment
-sentences = sent_tokenize(text)
+        # Overall Sentiment
+        overall_result = sentiment_pipeline(user_text)[0]
 
-# Extract potential aspects using YAKE
-kw_extractor = yake.KeywordExtractor(lan="en", n=1, top=10)
-keywords = [kw for kw, _ in kw_extractor.extract_keywords(text)]
+        # Sentence-level analysis
+        sentences = sent_tokenize(user_text)
+        kw_extractor = yake.KeywordExtractor(lan="en", n=1, top=10)
+        keywords = [kw for kw, _ in kw_extractor.extract_keywords(user_text)]
 
-# Containers for aspect-based sentiment
-positive_aspects = []
-negative_aspects = []
+        for sentence in sentences:
+            result = sentiment_pipeline(sentence)[0]
+            sentiment = result['label']
 
-for sentence in sentences:
-    result = sentiment_pipeline(sentence)[0]
-    sentiment = result['label']
+            if "1 star" in sentiment or "2 stars" in sentiment:
+                polarity = "Negative"
+            elif "4 stars" in sentiment or "5 stars" in sentiment:
+                polarity = "Positive"
+            else:
+                continue
 
-    # Determine polarity
-    if "1 star" in sentiment or "2 stars" in sentiment:
-        polarity = "Negative"
-    elif "4 stars" in sentiment or "5 stars" in sentiment:
-        polarity = "Positive"
-    else:
-        continue  # skip neutral
+            for aspect in keywords:
+                if aspect.lower() in sentence.lower():
+                    if polarity == "Positive":
+                        positive_aspects.append(aspect)
+                    elif polarity == "Negative":
+                        negative_aspects.append(aspect)
 
-    # Match keywords (aspects) in sentence
-    for aspect in keywords:
-        if aspect.lower() in sentence.lower():
-            if polarity == "Positive":
-                positive_aspects.append(aspect)
-            elif polarity == "Negative":
-                negative_aspects.append(aspect)
+        positive_aspects = list(set(positive_aspects))
+        negative_aspects = list(set(negative_aspects))
 
-# Remove duplicates
-positive_aspects = list(set(positive_aspects))
-negative_aspects = list(set(negative_aspects))
+        # MongoDB insertion
+        review_data = {
+            "review": user_text,
+            "overall_sentiment": overall_result['label'],
+            "confidence": round(overall_result['score'], 2),
+            "positive_aspects": positive_aspects,
+            "negative_aspects": negative_aspects
+        }
 
-# Display results
-print("✔️ Positive Aspects:")
-for aspect in positive_aspects:
-    print(f"  + {aspect}")
+        # Insert the review data into MongoDB
+        reviews_collection.insert_one(review_data)
 
-print("\n❌ Negative Aspects:")
-for aspect in negative_aspects:
-    print(f"  - {aspect}")
+    return render_template("index.html",
+                           overall=overall_result,
+                           positives=positive_aspects,
+                           negatives=negative_aspects,
+                           user_text=user_text)
 
-
-
-
-# from transformers import pipeline
-
-# # Load the sentiment analysis pipeline using the nlptown model
-# sentiment_pipeline = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
-
-# # Example text for sentiment
-# text = "performance is the most awesome"
-
-# # Run sentiment analysis
-# result = sentiment_pipeline(text)
-
-# # Print result
-# print("Sentiment Result:", result)
-
-
-
+if __name__ == '__main__':
+    app.run(debug=True)
