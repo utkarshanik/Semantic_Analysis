@@ -9,10 +9,10 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# MongoDB connection using the provided connection string
+# MongoDB connection
 client = MongoClient("mongodb+srv://UtkarshaSemantic9:UtkarshaSemantic9@customer-feedbacks.172va.mongodb.net/?retryWrites=true&w=majority&appName=Customer-Feedbacks")
-db = client["sentiment_analysis_db"]  # Choose a DB name, you can use an existing one or create a new one
-reviews_collection = db["reviews"]  # Choose a collection name, you can create a new one
+db = client["sentiment_analysis_db"]
+reviews_collection = db["reviews"]
 
 # Load sentiment pipeline
 sentiment_pipeline = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
@@ -36,22 +36,17 @@ def index():
         keywords = [kw for kw, _ in kw_extractor.extract_keywords(user_text)]
 
         for sentence in sentences:
-            result = sentiment_pipeline(sentence)[0]
-            sentiment = result['label']
-
-            if "1 star" in sentiment or "2 stars" in sentiment:
-                polarity = "Negative"
-            elif "4 stars" in sentiment or "5 stars" in sentiment:
-                polarity = "Positive"
-            else:
-                continue
-
             for aspect in keywords:
                 if aspect.lower() in sentence.lower():
-                    if polarity == "Positive":
-                        positive_aspects.append(aspect)
-                    elif polarity == "Negative":
+                    # Sentiment of aspect within its sentence
+                    aspect_result = sentiment_pipeline(aspect + " " + sentence)[0]
+                    sentiment = aspect_result['label']
+
+                    if "1 star" in sentiment or "2 stars" in sentiment:
                         negative_aspects.append(aspect)
+                    elif "4 stars" in sentiment or "5 stars" in sentiment:
+                        positive_aspects.append(aspect)
+                    # You can add "3 stars" as neutral if needed
 
         positive_aspects = list(set(positive_aspects))
         negative_aspects = list(set(negative_aspects))
@@ -65,7 +60,6 @@ def index():
             "negative_aspects": negative_aspects
         }
 
-        # Insert the review data into MongoDB
         reviews_collection.insert_one(review_data)
 
     return render_template("index.html",

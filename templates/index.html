@@ -11,17 +11,17 @@
     </form>
 
     {% if overall %}
-        <h2>🔍 Overall Sentiment</h2>
+        <h2> Overall Sentiment</h2>
         <p>{{ overall.label }} (Confidence: {{ overall.score | round(2) }})</p>
 
-        <h3>✔️ Positive Aspects:</h3>
+        <h3> Positive Aspects:</h3>
         <ul>
             {% for aspect in positives %}
                 <li>{{ aspect }}</li>
             {% endfor %}
         </ul>
 
-        <h3>❌ Negative Aspects:</h3>
+        <h3>Negative Aspects:</h3>
         <ul>
             {% for aspect in negatives %}
                 <li>{{ aspect }}</li>
