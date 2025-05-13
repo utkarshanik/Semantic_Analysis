@@ -13,13 +13,13 @@
             <textarea id="feedback" class="m-0" name="review" rows="6" cols="60" placeholder="Type your review here..." style="background-color: #9db1b1;">{{ user_text }}</textarea>
             <div class="col-12 mb-2 mt-2 d-flex justify-content-center align-items-center">
                 <input class="col-2 m-3 btn btn-secondary" type="submit" value="Analyze">
-                <button class=" col-2 m-3 btn btn-warning" onclick="clearTextarea()">Clear</button>
+                <button type="button" class=" col-2 m-3 btn btn-warning" onclick="clearTextarea()">Clear</button>
             </div>
         </div>
     </form>
 
     <div id="loadingSpinner" class="my-4 text-light d-none d-flex justify-content-center align-items-center flex-column">
-        <div class="spinner-border text-info" role="status">
+        <div class="spinner-border text-light" role="status">
         <span class="visually-hidden">Loading...</span>
         </div>
         <p class="mt-1">Analyzing review...</p>
@@ -33,14 +33,14 @@
       <h3 class="text-light mt-4">Positive Aspects</h3>
       <div class="mb-1">
         {% for aspect in positives %}
-          <span class="badge bg-success me-2 mb-2">{{ aspect }}</span>
+          <span class="badge bg-success p-2 me-2 mb-2">{{ aspect }}</span>
         {% endfor %}
       </div>
 
       <h3 class="text-light mt-1">Negative Aspects</h3>
       <div>
         {% for aspect in negatives %}
-          <span class="badge bg-danger me-2 mb-2">{{ aspect }}</span>
+          <span class="badge bg-danger p-2 me-2 mb-2">{{ aspect }}</span>
         {% endfor %}
       </div>
     {% endif %}
@@ -50,6 +50,7 @@
 <script>
   function clearTextarea() {
     document.getElementById("feedback").value = "";
+     document.getElementById("resultSection").style.display = "none";
   }
    function showSpinner() {
       // Show the spinner
